@@ -1,0 +1,30 @@
+{
+  "results": [
+    {
+      "nsn": "5330008678836",
+      "niin": "008678836",
+      "fsc": "5330",
+      "itemName": "O RING",
+      "partNumber": "51097",
+      "cageCode": "99166",
+      "companyName": "SUNDSTRAND CORP SUNDSTRAND HYDRAULICS DIV",
+      "latestUnitPrice": null
+    },
+    {
+      "nsn": "5330010556815",
+      "niin": "010556815",
+      "fsc": "5330",
+      "itemName": "O RING",
+      "partNumber": "5330PL0670065",
+      "cageCode": "9009H",
+      "companyName": "JEDNOLITY INDEKS MATERIALOWY - UNIFORM MATERIAL INDEX",
+      "latestUnitPrice": null
+    }
+  ],
+  "totalCount": 114,
+  "page": 1,
+  "pageSize": 2,
+  "totalPages": 57,
+  "matchSet": "words",
+  "didYouMean": null
+}

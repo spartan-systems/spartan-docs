@@ -1,0 +1,47 @@
+{
+  "items": [
+    {
+      "id": 971013,
+      "supplyChain": "Aviation",
+      "dlaDirectOrCustomerDirect": "CD",
+      "pr": "7000591529",
+      "prDate": "2022-11-16T00:00:00Z",
+      "fsc": "5975",
+      "niin": "000663581",
+      "nsn": "5975000663581",
+      "nomenclature": "RACK,ELECTRICAL EQUI",
+      "solicitationNumber": "SPE4A623T020V",
+      "solicitationClose": "2022-11-28T00:00:00Z",
+      "prQuantity": 9,
+      "unitOfIssue": "EA",
+      "amc": "3",
+      "amsc": "P",
+      "naics": "334511",
+      "sourceFileDate": "2026-09-17T00:00:00Z",
+      "ingestedAt": "2026-09-18T06:53:05.333803Z"
+    },
+    {
+      "id": 971016,
+      "supplyChain": "Aviation",
+      "dlaDirectOrCustomerDirect": "DD",
+      "pr": "7001931135",
+      "prDate": "2023-03-07T00:00:00Z",
+      "fsc": "6615",
+      "niin": "001965732",
+      "nsn": "6615001965732",
+      "nomenclature": "TUBE ASSEMBLY,SERVO",
+      "solicitationNumber": "SPE4A523Q0370",
+      "solicitationClose": "2023-03-10T00:00:00Z",
+      "prQuantity": 2,
+      "unitOfIssue": "EA",
+      "amc": "3",
+      "amsc": "B",
+      "naics": "334511",
+      "sourceFileDate": "2026-09-17T00:00:00Z",
+      "ingestedAt": "2026-09-18T06:53:05.333803Z"
+    }
+  ],
+  "totalCount": 23995,
+  "page": 1,
+  "pageSize": 2
+}

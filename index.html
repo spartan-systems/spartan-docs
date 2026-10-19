@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spartan API Docs</title>
+  <meta name="description" content="Reference for the Spartan API: NSNs, DLA award history, DIBBS solicitations, no-bid solicitations and CAGE companies.">
+  <link rel="icon" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; background: #ffffff; }
+    .dark-mode body, body.dark-mode { background: #0d1b2a; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.72.3/dist/browser/standalone.js" integrity="sha384-HWi/QCSPi64AQ0xBXFGDk+7gmvZ4hJ/7sZMIXqWVz6Ikb6+Cxej/hWKaomOStyFb" crossorigin="anonymous"></script>
+  <script>
+    Scalar.createApiReference('#app', {
+      url: './openapi.json',
+      theme: 'none',
+      withDefaultFonts: false,
+      hideClientButton: true,
+      documentDownloadType: 'json',
+      persistAuth: true,
+      agent: { disabled: true },
+      mcp: { disabled: true },
+      authentication: { preferredSecurityScheme: 'ApiKey' },
+      defaultHttpClient: { targetKey: 'shell', clientKey: 'curl' },
+      hiddenClients: {
+        c: true, clojure: true, csharp: ['restsharp'], go: false, http: false, java: true, kotlin: true,
+        objc: true, ocaml: true, php: true, powershell: true, r: true, ruby: true, swift: true, dart: true, fsharp: true, rust: true,
+        node: ['undici', 'ofetch'], js: ['jquery', 'xhr', 'ofetch'], python: ['httpx_sync', 'httpx_async']
+      },
+      customCss: `
+        :root, .light-mode {
+          --scalar-font: 'Inter', system-ui, sans-serif;
+          --scalar-color-1: #111827;
+          --scalar-color-2: #4b5563;
+          --scalar-color-3: #6b7280;
+          --scalar-color-accent: #1e40af;
+          --scalar-background-1: #ffffff;
+          --scalar-background-2: #f1f5f9;
+          --scalar-background-3: #e2e8f0;
+          --scalar-background-accent: #1e40af14;
+          --scalar-border-color: rgba(0, 0, 0, 0.08);
+          --scalar-sidebar-background-1: #f8fafc;
+          --scalar-sidebar-item-active-background: #1e40af14;
+          --scalar-sidebar-color-active: #1e40af;
+        }
+        .dark-mode {
+          --scalar-font: 'Inter', system-ui, sans-serif;
+          --scalar-color-1: #f1f5f9;
+          --scalar-color-2: #cbd5e1;
+          --scalar-color-3: #94a3b8;
+          --scalar-color-accent: #93b4ff;
+          --scalar-background-1: #0d1b2a;
+          --scalar-background-2: #13263a;
+          --scalar-background-3: #1b324b;
+          --scalar-background-accent: #93b4ff1f;
+          --scalar-border-color: rgba(255, 255, 255, 0.1);
+          --scalar-sidebar-background-1: #0a1622;
+          --scalar-sidebar-item-active-background: #93b4ff1f;
+          --scalar-sidebar-color-active: #93b4ff;
+        }
+      `
+    });
+  </script>
+</body>
+</html>
