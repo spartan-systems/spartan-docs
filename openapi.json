@@ -293,10 +293,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/NsnDetail"
-                  }
+                  "$ref": "#/components/schemas/NsnDetail"
                 },
                 "example": {
                   "fsc": "5330",
