@@ -1,0 +1,3437 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Spartan API",
+    "description": "The Spartan API serves the same DLA procurement data as the Spartan app: NSNs and their part numbers, DLA award history, open DIBBS solicitations, no-bid solicitations and CAGE companies. It is a read-only JSON API over HTTPS.\n\n## Getting started\n\n1. **Get an API key.** Sign in to [Spartan](https://data.spartansystems.us), open **Settings → API Keys** and create a key. Keys are available on paid plans. The key is shown once, so copy it somewhere safe.\n2. **Send it in the `X-Api-Key` header** on every request.\n3. **Make a call:**\n\n```bash\ncurl -H \"X-Api-Key: sk_live_...\" \\\n  \"https://calf-lenient-officially.ngrok-free.app/api/v1/search?q=o%20ring&pageSize=5\"\n```\n\nEvery endpoint is a `GET` and returns JSON with camelCase field names.\n\n## Authentication\n\nEvery request needs your key in the `X-Api-Key` header. Keep it server-side: anyone holding it can spend your quota. If a key leaks, revoke or regenerate it under **Settings → API Keys**; the old key stops working at once.\n\nA key works only while your company's subscription is active.\n\n## Rate limits and quota\n\n| Limit | Default |\n|---|---|\n| Requests per minute, per key | 60 |\n| Units per calendar month (UTC), per key | 10,000 |\n\nEach request costs 1 unit. Every request that passes the key check counts, including ones that return `400` or `404`. Need more? Contact us.\n\nEvery response carries your remaining allowance:\n\n| Header | Meaning |\n|---|---|\n| `X-RateLimit-Limit` / `X-RateLimit-Remaining` | Requests allowed this minute, and how many are left |\n| `X-RateLimit-Reset` | When the minute window resets (Unix seconds) |\n| `X-Usage-Limit` / `X-Usage-Remaining` | Units allowed this month, and how many are left |\n| `X-Usage-Reset` | When the month resets (Unix seconds) |\n\nOver either limit you get `429 Too Many Requests`. A per-minute `429` also has a `Retry-After` header in seconds.\n\n## Errors\n\nErrors return a JSON body with a `message`.\n\n| Status | Meaning |\n|---|---|\n| `400` | A parameter is missing or malformed. Validation errors list each field under `errors`. |\n| `401` | The `X-Api-Key` header is missing, or the key is invalid or revoked. |\n| `403` | The key's company has no active subscription (`\"code\": \"subscription_required\"`). |\n| `404` | Nothing matches, e.g. an unknown NIIN or CAGE code. |\n| `429` | Rate limit or monthly quota spent. See the headers above. |\n| `503` | We couldn't confirm your subscription just then. Retry after a moment. |\n\n## Identifiers\n\n- **NIIN**: 9 digits, e.g. `012345678`. **NSN**: 13 digits, the 4-digit FSC followed by the NIIN, e.g. `5330-01-234-5678`. Endpoints take either, with or without dashes, and return them without dashes.\n- **CAGE code**: 5 characters, e.g. `1CAY9`.\n\n## How fresh the data is\n\n| Data | Updated |\n|---|---|\n| DIBBS solicitations | Every 4 hours |\n| No-bid solicitations | Daily, 06:00 Pacific |\n| Awards, stock, forecasts and other DLA FOIA files | Nightly, as DLA publishes them. DLA's award files run months behind, so the last year of awards is still filling in. |\n| Search results | Rebuilt nightly |\n\n## Versioning\n\nEverything here is under `/api/v1`. Within v1 we only add things: new endpoints, new optional parameters and new response fields. Write your client to ignore fields it doesn't know. Removing or renaming a field, or changing what one means, would come as `/api/v2`, with v1 kept running while you move over.\n",
+    "version": "v1"
+  },
+  "servers": [
+    {
+      "url": "https://calf-lenient-officially.ngrok-free.app",
+      "description": "Production"
+    }
+  ],
+  "paths": {
+    "/api/v1/companies/{cageCode}": {
+      "get": {
+        "tags": [
+          "Companies"
+        ],
+        "summary": "Get a company by CAGE",
+        "description": "The company behind a CAGE code: name, location, CAGE status and type.",
+        "operationId": "getCompany",
+        "parameters": [
+          {
+            "name": "cageCode",
+            "in": "path",
+            "description": "A 5-character CAGE code, e.g. `1CAY9`.",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Company"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/no-bid-solicitations": {
+      "get": {
+        "tags": [
+          "Solicitations"
+        ],
+        "summary": "List no-bid solicitations",
+        "description": "Solicitations DLA received no bids on, paged and filterable.",
+        "operationId": "listNoBidSolicitations",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25
+            }
+          },
+          {
+            "name": "fsc",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nsn",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nomenclature",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "supplyChain",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "solicitationNumber",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortDescending",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DlaNoBidSolicitationPagedResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/nsn/{niin}": {
+      "get": {
+        "tags": [
+          "NSNs"
+        ],
+        "summary": "Get an NSN",
+        "description": "Everything known about one item: FLIS identification, part numbers and manufacturers, management and packaging data, award and procurement history, DIBBS solicitations, stock and demand, price reasonableness, special handling and weapon systems.",
+        "operationId": "getNsn",
+        "parameters": [
+          {
+            "name": "niin",
+            "in": "path",
+            "description": "A NIIN or a 13-digit NSN, with or without dashes, e.g. `5330-01-234-5678`.",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NsnDetail"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/nsn/{niin}/awards": {
+      "get": {
+        "tags": [
+          "NSNs"
+        ],
+        "summary": "List an NSN's awards",
+        "description": "DLA contract awards for the item, one row per award: date, awardee CAGE, quantity and unit price.",
+        "operationId": "listNsnAwards",
+        "parameters": [
+          {
+            "name": "niin",
+            "in": "path",
+            "description": "A NIIN or a 13-digit NSN, with or without dashes.",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ContractHistory"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 57836582,
+                    "niin": "000146763",
+                    "securityClassification": "U",
+                    "fsc": "4730",
+                    "unit": "EA",
+                    "cage": "75Q65",
+                    "contractNumber": "SPE7LX26FAKVE",
+                    "orderQty": 169,
+                    "awardDate": "20260514",
+                    "netPrice": 1.64,
+                    "totalPrice": 277.16,
+                    "poNum": 4571825808,
+                    "poItmNo": 1,
+                    "itemName": "TEE,PIPE",
+                    "partNumber": "70921104",
+                    "partNumbers": [
+                      "70921104",
+                      "12225P-4",
+                      "4-4-4-130424B",
+                      "3750X4",
+                      "J530",
+                      "121869",
+                      "2225P-4",
+                      "9032-3750X4",
+                      "SAE J530 4-4-4 130424B",
+                      "SAE-J530"
+                    ],
+                    "stdUPrice": 15.77,
+                    "nsn": "4730000146763",
+                    "deliveryOrderNumber": null,
+                    "awardPdfLink": null,
+                    "deliveryOrderPdfLink": null,
+                    "company": null
+                  },
+                  {
+                    "id": 57836581,
+                    "niin": "000146763",
+                    "securityClassification": "U",
+                    "fsc": "4730",
+                    "unit": "EA",
+                    "cage": "75Q65",
+                    "contractNumber": "SPE7LX26FAKVD",
+                    "orderQty": 2,
+                    "awardDate": "20260514",
+                    "netPrice": 1.64,
+                    "totalPrice": 3.28,
+                    "poNum": 4571825807,
+                    "poItmNo": 1,
+                    "itemName": "TEE,PIPE",
+                    "partNumber": "9032-3750X4",
+                    "partNumbers": [
+                      "9032-3750X4",
+                      "SAE J530 4-4-4 130424B",
+                      "12225P-4",
+                      "J530",
+                      "2225P-4",
+                      "3750X4",
+                      "4-4-4-130424B",
+                      "121869",
+                      "SAE-J530"
+                    ],
+                    "stdUPrice": 15.77,
+                    "nsn": "4730000146763",
+                    "deliveryOrderNumber": null,
+                    "awardPdfLink": null,
+                    "deliveryOrderPdfLink": null,
+                    "company": null
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/search": {
+      "get": {
+        "tags": [
+          "Search"
+        ],
+        "summary": "Search NSNs",
+        "description": "Finds NSNs by item name, NIIN, part number, FSC, CAGE or manufacturer. Send at least one; several narrow the search. Best matches come first: an exact item name, then names that start with the words, then names that contain them.",
+        "operationId": "searchNsns",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Words to find in item names, e.g. `o ring` or `bearing ball`, or an NSN or NIIN. Matches whole words in any order; if none match, names that contain the text or look like it.",
+            "style": "form",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "niin",
+            "in": "query",
+            "description": "All or part of a NIIN or NSN; dashes are ignored.",
+            "style": "form",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "partNumber",
+            "in": "query",
+            "description": "All or part of a manufacturer part number.",
+            "style": "form",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fsc",
+            "in": "query",
+            "description": "Federal Supply Class, e.g. `5330`. Separate several with commas.",
+            "style": "form",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cage",
+            "in": "query",
+            "description": "A CAGE code that makes the part, e.g. `1CAY9`.",
+            "style": "form",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "company",
+            "in": "query",
+            "description": "All or part of a manufacturer's name.",
+            "style": "form",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number, from 1.",
+            "style": "form",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "Results per page, 1 to 100.",
+            "style": "form",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicSearchResponse"
+                },
+                "example": {
+                  "results": [
+                    {
+                      "nsn": "5330008678836",
+                      "niin": "008678836",
+                      "fsc": "5330",
+                      "itemName": "O RING",
+                      "partNumber": "51097",
+                      "cageCode": "99166",
+                      "companyName": "SUNDSTRAND CORP SUNDSTRAND HYDRAULICS DIV",
+                      "latestUnitPrice": null
+                    },
+                    {
+                      "nsn": "5330010556815",
+                      "niin": "010556815",
+                      "fsc": "5330",
+                      "itemName": "O RING",
+                      "partNumber": "5330PL0670065",
+                      "cageCode": "9009H",
+                      "companyName": "JEDNOLITY INDEKS MATERIALOWY - UNIFORM MATERIAL INDEX",
+                      "latestUnitPrice": null
+                    }
+                  ],
+                  "totalCount": 114,
+                  "page": 1,
+                  "pageSize": 2,
+                  "totalPages": 57,
+                  "matchSet": "words",
+                  "didYouMean": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/solicitations": {
+      "get": {
+        "tags": [
+          "Solicitations"
+        ],
+        "summary": "List DIBBS solicitations",
+        "description": "DIBBS RFQ lines, newest first, open ones only unless showOpenOnly=false. Array filters repeat the key, e.g. `cageCodes[]=1CAY9&cageCodes[]=09094`.",
+        "operationId": "listSolicitations",
+        "parameters": [
+          {
+            "name": "setAsideCodes[]",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "selectedDate",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "solicitationNumbers[]",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "nsnNumbers[]",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "partNumbers[]",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "cageCodes[]",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "nomenclature",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "showOpenOnly",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "weaponSystems[]",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "essentialityCodes[]",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "solicitationTypes[]",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "excludeHazmat",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "highDemandOnly",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "lowStockOnly",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortDescending",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolicitationPagedResult"
+                },
+                "example": {
+                  "items": [
+                    {
+                      "isOutdated": false,
+                      "noBid": false,
+                      "solicitationNumber": "SPE1C127T0029",
+                      "date": "2026-10-18T00:00:00Z",
+                      "itemName": "POCKET AMMUNITION MAGAZINE,VEST",
+                      "niin": "015998624",
+                      "solicitationTypeIndicator": "F",
+                      "smallBusinessSetAsideIndicator": "N",
+                      "additionalClauseFillInsIndicator": "N",
+                      "returnByDate": "10/29/2026",
+                      "returnBy": "2026-10-29",
+                      "quoterCageCode": "",
+                      "quoteForCageCode": "",
+                      "reserved1": "",
+                      "reserved2": "",
+                      "reserved3": "",
+                      "reserved4": "",
+                      "reserved5": "",
+                      "smallBusinessRepresentationsCode": "",
+                      "smallDisadvantagedBusinessEthnicTypeCode": "",
+                      "womanOwnedSmallBusinessEdwosb": "",
+                      "veteranOwnedSmallBusiness": "",
+                      "hubzoneSmallBusiness": "",
+                      "jointVenture": "",
+                      "jointVentureRemarks": "",
+                      "reserved6": "",
+                      "affirmativeActionComplianceCode": "",
+                      "previousContractsComplianceReportsCode": "",
+                      "alternateDisputesResolution": "",
+                      "bidTypeCode": "BI",
+                      "promptPaymentDiscountTermsCode": "1",
+                      "vendorQuoteNumber": "",
+                      "daysQuoteValid": 90,
+                      "meetsPackagingRequirement": "",
+                      "boaFssBpa": "NAP",
+                      "boaFssBpaContractNumber": "",
+                      "boaFssBpaContractExpirationDate": "",
+                      "fobPoint": "D",
+                      "fobCity": "",
+                      "fobStateProvince": "",
+                      "fobCountry": "",
+                      "inspectionPointCode": "D",
+                      "placeGovernmentInspectionPackagingCageCode": "",
+                      "placeGovernmentInspectionSuppliesCageCode": "",
+                      "substitutionsForSpiProcessProposed": "N",
+                      "spiProcess": "",
+                      "spiFacility": "",
+                      "spiMilitaryFederalSpecificationStandard": "",
+                      "spiAffectedContractLineItemNumber": "",
+                      "solicitationLineNumber": "0001",
+                      "reserved7": "",
+                      "purchaseRequestNumber": "7018754446",
+                      "nationalStockPartNumber": "8465015998624",
+                      "unitOfIssue": "EA",
+                      "quantity": 1,
+                      "unitPrice": 142.93,
+                      "deliveryDays": 20,
+                      "guaranteedMinimum": null,
+                      "doMinimum": null,
+                      "contractMaximum": null,
+                      "annualFrequencyOfBuys": "",
+                      "noDoMinimumQuantity": "",
+                      "hubzonePreferenceIndicator": "N",
+                      "waiverOfHubzonePreference": "",
+                      "immediateShipmentPrice": null,
+                      "immediateShipmentDeliveryDays": null,
+                      "reserved8": "",
+                      "tradeAgreementsIndicator": "N",
+                      "sourceOfSupplyCageCode": "",
+                      "firstArticleWaiverCode": "",
+                      "hazardousMaterialIdentificationSafetyData": "",
+                      "hazardousWarningLabels": "",
+                      "materialRequirements": "",
+                      "buyAmericanIndicator": "N",
+                      "freeTradeAgreementsIndicator": "N",
+                      "buyAmericanFreeTradeEndProduct": "",
+                      "buyAmericanFreeTradeCountryOriginCode": "",
+                      "buyAmericanFreeTradeCountryCode": "",
+                      "dutyFreeEntryRequested": "N",
+                      "dutyFreeEntryRequestedForeignSuppliesCode": "",
+                      "dutyFreeEntryRequestedDutyPaidCode": "",
+                      "dutyFreeEntryRequestedDutyPaidAmount": null,
+                      "priceBreaksSolicitedIndicator": "N",
+                      "quantityPriceBreaksRange1LowerQuantity": null,
+                      "quantityPriceBreaksRange1UpperQuantity": null,
+                      "quantityPriceBreaksRange1UnitPrice": null,
+                      "quantityPriceBreaksRange2LowerQuantity": null,
+                      "quantityPriceBreaksRange2UpperQuantity": null,
+                      "quantityPriceBreaksRange2UnitPrice": null,
+                      "quantityPriceBreaksRange3LowerQuantity": null,
+                      "quantityPriceBreaksRange3UpperQuantity": null,
+                      "quantityPriceBreaksRange3UnitPrice": null,
+                      "quantityPriceBreaksRange4LowerQuantity": null,
+                      "quantityPriceBreaksRange4UpperQuantity": null,
+                      "quantityPriceBreaksRange4UnitPrice": null,
+                      "quantityPriceBreaksRange5LowerQuantity": null,
+                      "quantityPriceBreaksRange5UpperQuantity": null,
+                      "quantityPriceBreaksRange5UnitPrice": null,
+                      "quantityPriceBreaksRange6LowerQuantity": null,
+                      "quantityPriceBreaksRange6UpperQuantity": null,
+                      "quantityPriceBreaksRange6UnitPrice": null,
+                      "quantityVariancePlus": 0,
+                      "quantityVarianceMinus": 0,
+                      "minimumOrderQuantityCode": "N",
+                      "minimumOrderMaximumQuantity": null,
+                      "immediateShipmentAvailable": "N",
+                      "immediateShipmentQuantity": null,
+                      "manufacturerDealer": "",
+                      "actualManufacturingProductionCageCode": "",
+                      "actualManufacturingProductionNameAddress": "",
+                      "itemDescriptionIndicator": "P",
+                      "partNumberOfferedCode": "",
+                      "partNumberOfferedCageCode": "",
+                      "partNumberOfferedPartNumber": "",
+                      "partNumberOfferedRemarks": "",
+                      "suppliesOffered": "",
+                      "suppliesOfferedRemarks": "",
+                      "qualificationRequirementsMfgCage": "",
+                      "qualificationRequirementsSourceCage": "",
+                      "qualificationRequirementsItemName": "",
+                      "qualificationRequirementsServiceIdentification": "",
+                      "qualificationRequirementsTestNumber": "",
+                      "higherLevelQualityIndicator": "N",
+                      "higherLevelQualityCode": "",
+                      "higherLevelQualityRemarks": "",
+                      "childLaborCertificationCode": "N",
+                      "quoteRemarks": ""
+                    },
+                    {
+                      "isOutdated": false,
+                      "noBid": false,
+                      "solicitationNumber": "SPE1C127T0029",
+                      "date": "2026-10-18T00:00:00Z",
+                      "itemName": "POCKET AMMUNITION MAGAZINE,VEST",
+                      "niin": "015998624",
+                      "solicitationTypeIndicator": "F",
+                      "smallBusinessSetAsideIndicator": "N",
+                      "additionalClauseFillInsIndicator": "N",
+                      "returnByDate": "10/29/2026",
+                      "returnBy": "2026-10-29",
+                      "quoterCageCode": "",
+                      "quoteForCageCode": "",
+                      "reserved1": "",
+                      "reserved2": "",
+                      "reserved3": "",
+                      "reserved4": "",
+                      "reserved5": "",
+                      "smallBusinessRepresentationsCode": "",
+                      "smallDisadvantagedBusinessEthnicTypeCode": "",
+                      "womanOwnedSmallBusinessEdwosb": "",
+                      "veteranOwnedSmallBusiness": "",
+                      "hubzoneSmallBusiness": "",
+                      "jointVenture": "",
+                      "jointVentureRemarks": "",
+                      "reserved6": "",
+                      "affirmativeActionComplianceCode": "",
+                      "previousContractsComplianceReportsCode": "",
+                      "alternateDisputesResolution": "",
+                      "bidTypeCode": "BI",
+                      "promptPaymentDiscountTermsCode": "1",
+                      "vendorQuoteNumber": "",
+                      "daysQuoteValid": 90,
+                      "meetsPackagingRequirement": "",
+                      "boaFssBpa": "NAP",
+                      "boaFssBpaContractNumber": "",
+                      "boaFssBpaContractExpirationDate": "",
+                      "fobPoint": "D",
+                      "fobCity": "",
+                      "fobStateProvince": "",
+                      "fobCountry": "",
+                      "inspectionPointCode": "D",
+                      "placeGovernmentInspectionPackagingCageCode": "",
+                      "placeGovernmentInspectionSuppliesCageCode": "",
+                      "substitutionsForSpiProcessProposed": "N",
+                      "spiProcess": "",
+                      "spiFacility": "",
+                      "spiMilitaryFederalSpecificationStandard": "",
+                      "spiAffectedContractLineItemNumber": "",
+                      "solicitationLineNumber": "0002",
+                      "reserved7": "",
+                      "purchaseRequestNumber": "7018754449",
+                      "nationalStockPartNumber": "8465015998624",
+                      "unitOfIssue": "EA",
+                      "quantity": 10,
+                      "unitPrice": 142.93,
+                      "deliveryDays": 20,
+                      "guaranteedMinimum": null,
+                      "doMinimum": null,
+                      "contractMaximum": null,
+                      "annualFrequencyOfBuys": "",
+                      "noDoMinimumQuantity": "",
+                      "hubzonePreferenceIndicator": "N",
+                      "waiverOfHubzonePreference": "",
+                      "immediateShipmentPrice": null,
+                      "immediateShipmentDeliveryDays": null,
+                      "reserved8": "",
+                      "tradeAgreementsIndicator": "N",
+                      "sourceOfSupplyCageCode": "",
+                      "firstArticleWaiverCode": "",
+                      "hazardousMaterialIdentificationSafetyData": "",
+                      "hazardousWarningLabels": "",
+                      "materialRequirements": "",
+                      "buyAmericanIndicator": "N",
+                      "freeTradeAgreementsIndicator": "N",
+                      "buyAmericanFreeTradeEndProduct": "",
+                      "buyAmericanFreeTradeCountryOriginCode": "",
+                      "buyAmericanFreeTradeCountryCode": "",
+                      "dutyFreeEntryRequested": "N",
+                      "dutyFreeEntryRequestedForeignSuppliesCode": "",
+                      "dutyFreeEntryRequestedDutyPaidCode": "",
+                      "dutyFreeEntryRequestedDutyPaidAmount": null,
+                      "priceBreaksSolicitedIndicator": "N",
+                      "quantityPriceBreaksRange1LowerQuantity": null,
+                      "quantityPriceBreaksRange1UpperQuantity": null,
+                      "quantityPriceBreaksRange1UnitPrice": null,
+                      "quantityPriceBreaksRange2LowerQuantity": null,
+                      "quantityPriceBreaksRange2UpperQuantity": null,
+                      "quantityPriceBreaksRange2UnitPrice": null,
+                      "quantityPriceBreaksRange3LowerQuantity": null,
+                      "quantityPriceBreaksRange3UpperQuantity": null,
+                      "quantityPriceBreaksRange3UnitPrice": null,
+                      "quantityPriceBreaksRange4LowerQuantity": null,
+                      "quantityPriceBreaksRange4UpperQuantity": null,
+                      "quantityPriceBreaksRange4UnitPrice": null,
+                      "quantityPriceBreaksRange5LowerQuantity": null,
+                      "quantityPriceBreaksRange5UpperQuantity": null,
+                      "quantityPriceBreaksRange5UnitPrice": null,
+                      "quantityPriceBreaksRange6LowerQuantity": null,
+                      "quantityPriceBreaksRange6UpperQuantity": null,
+                      "quantityPriceBreaksRange6UnitPrice": null,
+                      "quantityVariancePlus": 0,
+                      "quantityVarianceMinus": 0,
+                      "minimumOrderQuantityCode": "N",
+                      "minimumOrderMaximumQuantity": null,
+                      "immediateShipmentAvailable": "N",
+                      "immediateShipmentQuantity": null,
+                      "manufacturerDealer": "",
+                      "actualManufacturingProductionCageCode": "",
+                      "actualManufacturingProductionNameAddress": "",
+                      "itemDescriptionIndicator": "P",
+                      "partNumberOfferedCode": "",
+                      "partNumberOfferedCageCode": "",
+                      "partNumberOfferedPartNumber": "",
+                      "partNumberOfferedRemarks": "",
+                      "suppliesOffered": "",
+                      "suppliesOfferedRemarks": "",
+                      "qualificationRequirementsMfgCage": "",
+                      "qualificationRequirementsSourceCage": "",
+                      "qualificationRequirementsItemName": "",
+                      "qualificationRequirementsServiceIdentification": "",
+                      "qualificationRequirementsTestNumber": "",
+                      "higherLevelQualityIndicator": "N",
+                      "higherLevelQualityCode": "",
+                      "higherLevelQualityRemarks": "",
+                      "childLaborCertificationCode": "N",
+                      "quoteRemarks": ""
+                    }
+                  ],
+                  "totalCount": 20389,
+                  "page": 1,
+                  "pageSize": 2
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApprovedVendorDetail": {
+        "type": "object",
+        "properties": {
+          "cage": {
+            "type": "string",
+            "nullable": true
+          },
+          "vendorName": {
+            "type": "string",
+            "nullable": true
+          },
+          "vendorStatus": {
+            "type": "string",
+            "nullable": true
+          },
+          "acquisitionMethod": {
+            "type": "string",
+            "nullable": true
+          },
+          "unitPrice": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "city": {
+            "type": "string",
+            "nullable": true
+          },
+          "state": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Company": {
+        "type": "object",
+        "properties": {
+          "cageCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "cageStatus": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "cao": {
+            "type": "string",
+            "nullable": true
+          },
+          "companyName": {
+            "type": "string",
+            "nullable": true
+          },
+          "city": {
+            "type": "string",
+            "nullable": true
+          },
+          "stateProvince": {
+            "type": "string",
+            "nullable": true
+          },
+          "zipPostalZone": {
+            "type": "string",
+            "nullable": true
+          },
+          "country": {
+            "type": "string",
+            "nullable": true
+          },
+          "contractHistory": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContractHistory"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ContractHistory": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "niin": {
+            "type": "string",
+            "nullable": true
+          },
+          "securityClassification": {
+            "type": "string"
+          },
+          "fsc": {
+            "type": "string",
+            "nullable": true
+          },
+          "unit": {
+            "type": "string",
+            "nullable": true
+          },
+          "cage": {
+            "type": "string",
+            "nullable": true
+          },
+          "contractNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "orderQty": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          },
+          "awardDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "netPrice": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "totalPrice": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "poNum": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "poItmNo": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "itemName": {
+            "type": "string",
+            "nullable": true
+          },
+          "partNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "partNumbers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "stdUPrice": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "nsn": {
+            "type": "string",
+            "nullable": true
+          },
+          "deliveryOrderNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "awardPdfLink": {
+            "type": "string",
+            "nullable": true
+          },
+          "deliveryOrderPdfLink": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DateOnly": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "month": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "day": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dayOfWeek": {
+            "$ref": "#/components/schemas/DayOfWeek"
+          },
+          "dayOfYear": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
+          },
+          "dayNumber": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DayOfWeek": {
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "type": "integer",
+        "format": "int32"
+      },
+      "DibbsAward": {
+        "type": "object",
+        "properties": {
+          "nsn": {
+            "type": "string",
+            "nullable": true
+          },
+          "niin": {
+            "type": "string",
+            "nullable": true
+          },
+          "partNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "rowIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "awardBasicNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "awardPdfLink": {
+            "type": "string",
+            "nullable": true
+          },
+          "deliveryOrderNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "deliveryOrderPdfLink": {
+            "type": "string",
+            "nullable": true
+          },
+          "deliveryOrderCounter": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "lastModPostingDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "awardeeCageCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalContactPrice": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          },
+          "awardDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "postedDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "nomenclature": {
+            "type": "string",
+            "nullable": true
+          },
+          "purchaseRequest": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "solicitation": {
+            "type": "string",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          },
+          "unitOfMeasure": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DibbsForecast": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "supplyChain": {
+            "type": "string",
+            "nullable": true
+          },
+          "fsc": {
+            "type": "string",
+            "nullable": true
+          },
+          "niin": {
+            "type": "string",
+            "nullable": true
+          },
+          "nsn": {
+            "type": "string",
+            "nullable": true
+          },
+          "itemDescription": {
+            "type": "string",
+            "nullable": true
+          },
+          "ui": {
+            "type": "string",
+            "nullable": true
+          },
+          "forecastDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "forecastQuantity": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DibbsSolicitation": {
+        "type": "object",
+        "properties": {
+          "rowIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nsn": {
+            "type": "string",
+            "nullable": true
+          },
+          "niin": {
+            "type": "string",
+            "nullable": true
+          },
+          "unformattedNsnOrPartNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "nomenclature": {
+            "type": "string",
+            "nullable": true
+          },
+          "technicalDocuments": {
+            "type": "string",
+            "nullable": true
+          },
+          "solicitation": {
+            "type": "string",
+            "nullable": true
+          },
+          "solicitationPdfLink": {
+            "type": "string",
+            "nullable": true
+          },
+          "rfqQuoteStatus": {
+            "type": "string",
+            "nullable": true
+          },
+          "purchaseRequest": {
+            "type": "string",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "issued": {
+            "type": "string",
+            "nullable": true
+          },
+          "returnBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "isSmallBusiness": {
+            "type": "boolean"
+          },
+          "isUnrestricted": {
+            "type": "boolean"
+          },
+          "isFastAward": {
+            "type": "boolean"
+          },
+          "isMilSpec": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DlaNoBidSolicitation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "supplyChain": {
+            "type": "string",
+            "nullable": true
+          },
+          "dlaDirectOrCustomerDirect": {
+            "type": "string",
+            "nullable": true
+          },
+          "pr": {
+            "type": "string",
+            "nullable": true
+          },
+          "prDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "fsc": {
+            "type": "string",
+            "nullable": true
+          },
+          "niin": {
+            "type": "string",
+            "nullable": true
+          },
+          "nsn": {
+            "type": "string",
+            "nullable": true
+          },
+          "nomenclature": {
+            "type": "string",
+            "nullable": true
+          },
+          "solicitationNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "solicitationClose": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "prQuantity": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "unitOfIssue": {
+            "type": "string",
+            "nullable": true
+          },
+          "amc": {
+            "type": "string",
+            "nullable": true
+          },
+          "amsc": {
+            "type": "string",
+            "nullable": true
+          },
+          "naics": {
+            "type": "string",
+            "nullable": true
+          },
+          "sourceFileDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "ingestedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DlaNoBidSolicitationPagedResult": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DlaNoBidSolicitation"
+            },
+            "nullable": true
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "FlisPackaging": {
+        "type": "object",
+        "properties": {
+          "niin": {
+            "type": "string",
+            "nullable": true
+          },
+          "picaSica": {
+            "type": "string"
+          },
+          "pkgCat": {
+            "type": "string",
+            "nullable": true
+          },
+          "unpkgItemWeight": {
+            "type": "string",
+            "nullable": true
+          },
+          "unpkgItemDim": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "ui": {
+            "type": "string",
+            "nullable": true
+          },
+          "tos": {
+            "type": "string",
+            "nullable": true
+          },
+          "icq": {
+            "type": "string",
+            "nullable": true
+          },
+          "mop": {
+            "type": "string",
+            "nullable": true
+          },
+          "clngDrying": {
+            "type": "string"
+          },
+          "presMat": {
+            "type": "string",
+            "nullable": true
+          },
+          "wrapMat": {
+            "type": "string",
+            "nullable": true
+          },
+          "cushDun": {
+            "type": "string",
+            "nullable": true
+          },
+          "thk": {
+            "type": "string"
+          },
+          "unitCont": {
+            "type": "string",
+            "nullable": true
+          },
+          "pkgDataSource": {
+            "type": "string",
+            "nullable": true
+          },
+          "interCont": {
+            "type": "string",
+            "nullable": true
+          },
+          "ucl": {
+            "type": "string",
+            "nullable": true
+          },
+          "spcMkg": {
+            "type": "string",
+            "nullable": true
+          },
+          "lvlA": {
+            "type": "string",
+            "nullable": true
+          },
+          "lvlB": {
+            "type": "string",
+            "nullable": true
+          },
+          "lvlC": {
+            "type": "string",
+            "nullable": true
+          },
+          "unitPackWeight": {
+            "type": "string",
+            "nullable": true
+          },
+          "unitPackDim": {
+            "type": "string",
+            "nullable": true
+          },
+          "unitPackCube": {
+            "type": "string",
+            "nullable": true
+          },
+          "opi": {
+            "type": "string",
+            "nullable": true
+          },
+          "supplementalInstructions": {
+            "type": "string",
+            "nullable": true
+          },
+          "pkgDesignActy": {
+            "type": "string",
+            "nullable": true
+          },
+          "spiNo": {
+            "type": "string",
+            "nullable": true
+          },
+          "spiRev": {
+            "type": "string",
+            "nullable": true
+          },
+          "spiDate": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "contNsn": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ForecastPoint": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "nullable": true
+          },
+          "forecastQty": {
+            "type": "number",
+            "format": "float"
+          }
+        },
+        "additionalProperties": false
+      },
+      "LeadTimeEntity": {
+        "required": [
+          "niin"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "niin": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "securityClassification": {
+            "type": "string",
+            "nullable": true
+          },
+          "fsc": {
+            "type": "string",
+            "nullable": true
+          },
+          "nsn": {
+            "type": "string",
+            "nullable": true
+          },
+          "adminLeadTimeDays": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "productionLeadTimeDays": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "ingestedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "NsnCrossReference": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "niin": {
+            "type": "string",
+            "nullable": true
+          },
+          "partNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "cageCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "companyName": {
+            "type": "string",
+            "nullable": true
+          },
+          "cageStatus": {
+            "type": "string"
+          },
+          "rncc": {
+            "type": "string"
+          },
+          "rnvc": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dac": {
+            "type": "string"
+          },
+          "rnaac": {
+            "type": "string",
+            "nullable": true
+          },
+          "rnfc": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "rnsc": {
+            "type": "string",
+            "nullable": true
+          },
+          "rnjc": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "sadc": {
+            "type": "string",
+            "nullable": true
+          },
+          "hcc": {
+            "type": "string",
+            "nullable": true
+          },
+          "msds": {
+            "type": "string",
+            "nullable": true
+          },
+          "medals": {
+            "type": "string",
+            "nullable": true
+          },
+          "company": {
+            "$ref": "#/components/schemas/Company"
+          }
+        },
+        "additionalProperties": false
+      },
+      "NsnDetail": {
+        "type": "object",
+        "properties": {
+          "fsc": {
+            "type": "string",
+            "nullable": true
+          },
+          "niin": {
+            "type": "string",
+            "nullable": true
+          },
+          "inc": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "itemName": {
+            "type": "string",
+            "nullable": true
+          },
+          "sos": {
+            "type": "string",
+            "nullable": true
+          },
+          "endItemName": {
+            "type": "string",
+            "nullable": true
+          },
+          "cancelledNiins": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "fiig": {
+            "type": "string",
+            "nullable": true
+          },
+          "pinc": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "critCd": {
+            "type": "string",
+            "nullable": true
+          },
+          "ii": {
+            "type": "string",
+            "nullable": true
+          },
+          "rpdMrc": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "dmil": {
+            "type": "string",
+            "nullable": true
+          },
+          "dmilIntCd": {
+            "type": "string",
+            "nullable": true
+          },
+          "niinAsgmt": {
+            "type": "string",
+            "nullable": true
+          },
+          "pmic": {
+            "type": "string",
+            "nullable": true
+          },
+          "adp": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "esdEmi": {
+            "type": "string",
+            "nullable": true
+          },
+          "hmic": {
+            "type": "string",
+            "nullable": true
+          },
+          "hcc": {
+            "type": "string",
+            "nullable": true
+          },
+          "scheduleB": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "enac": {
+            "type": "string",
+            "nullable": true
+          },
+          "iuidIndicator": {
+            "type": "string",
+            "nullable": true
+          },
+          "lstKwnSos": {
+            "type": "string",
+            "nullable": true
+          },
+          "natoFmsn": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "fedmall": {
+            "type": "string",
+            "nullable": true
+          },
+          "crossReferences": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NsnCrossReference"
+            },
+            "nullable": true
+          },
+          "managementData": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VFlisManagement"
+            },
+            "nullable": true
+          },
+          "contractHistory": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContractHistory"
+            },
+            "nullable": true
+          },
+          "procurementHistory": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProcurementHistory"
+            },
+            "nullable": true
+          },
+          "freight": {
+            "$ref": "#/components/schemas/VFreight"
+          },
+          "dssCubeAndWeight": {
+            "$ref": "#/components/schemas/VDssCubeAndWeight"
+          },
+          "flisPackaging": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlisPackaging"
+            },
+            "nullable": true
+          },
+          "dibbsSolicitations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DibbsSolicitation"
+            },
+            "nullable": true
+          },
+          "dibbsAwards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DibbsAward"
+            },
+            "nullable": true
+          },
+          "dibbsBatchQuotes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NsnSolicitationSummary"
+            },
+            "nullable": true
+          },
+          "dibbsForecasts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DibbsForecast"
+            },
+            "nullable": true
+          },
+          "vCharacteristics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VCharacteristicsEntity"
+            },
+            "nullable": true
+          },
+          "dlaNoBidSolicitations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DlaNoBidSolicitation"
+            },
+            "nullable": true
+          },
+          "stockAndDemand": {
+            "$ref": "#/components/schemas/StockAndDemandData"
+          },
+          "priceReasonableness": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceReasonableness"
+            },
+            "nullable": true
+          },
+          "approvedVendors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApprovedVendorDetail"
+            },
+            "nullable": true
+          },
+          "weaponSystems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WeaponSystemDesignatorEntity"
+            },
+            "nullable": true
+          },
+          "specialHandlingItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SpecialHandlingItemEntity"
+            },
+            "nullable": true
+          },
+          "leadTime": {
+            "$ref": "#/components/schemas/LeadTimeEntity"
+          },
+          "competitionLevel": {
+            "type": "string",
+            "nullable": true
+          },
+          "activeCompetitorCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "approvedSourceCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "contractHistoryTotalCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "NsnSolicitationSummary": {
+        "type": "object",
+        "properties": {
+          "solicitationNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "returnByDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "unitOfIssue": {
+            "type": "string",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "unitPrice": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "smallBusinessSetAsideIndicator": {
+            "type": "string",
+            "nullable": true
+          },
+          "solicitationTypeIndicator": {
+            "type": "string",
+            "nullable": true
+          },
+          "deliveryDays": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "fobPoint": {
+            "type": "string",
+            "nullable": true
+          },
+          "higherLevelQualityIndicator": {
+            "type": "string",
+            "nullable": true
+          },
+          "purchaseRequestNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "inspectionPointCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "buyAmericanIndicator": {
+            "type": "string",
+            "nullable": true
+          },
+          "hubzonePreferenceIndicator": {
+            "type": "string",
+            "nullable": true
+          },
+          "guaranteedMinimum": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "doMinimum": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PriceReasonableness": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "niin": {
+            "type": "string",
+            "nullable": true
+          },
+          "fsc": {
+            "type": "string",
+            "nullable": true
+          },
+          "priceReasonablenessCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastContractPrice": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "unitPrice": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "cage": {
+            "type": "string",
+            "nullable": true
+          },
+          "contractNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "awardDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "orderQty": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          },
+          "unit": {
+            "type": "string",
+            "nullable": true
+          },
+          "prcType": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "instance": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": {}
+      },
+      "ProcurementHistory": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "niin": {
+            "type": "string",
+            "nullable": true
+          },
+          "securityClassification": {
+            "type": "string"
+          },
+          "fsc": {
+            "type": "string",
+            "nullable": true
+          },
+          "clin": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "unit": {
+            "type": "string",
+            "nullable": true
+          },
+          "cage": {
+            "type": "string",
+            "nullable": true
+          },
+          "contractNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "referencedPiid": {
+            "type": "string",
+            "nullable": true
+          },
+          "orderQty": {
+            "type": "number",
+            "format": "float"
+          },
+          "awardDate": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "netPrice": {
+            "type": "number",
+            "format": "float"
+          },
+          "stdUPrice": {
+            "type": "number",
+            "format": "float"
+          },
+          "poNum": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "poItmNo": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "piinSpiinMod": {
+            "type": "string",
+            "nullable": true
+          },
+          "solicAmendmentNumber": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PublicSearchResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicSearchResult"
+            },
+            "nullable": true
+          },
+          "totalCount": {
+            "type": "integer",
+            "description": "Every match, across all pages.",
+            "format": "int32"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "Pages you can request. Paging stops at 10,000 results; narrow the search to reach the rest.",
+            "format": "int32"
+          },
+          "matchSet": {
+            "type": "string",
+            "description": "`words` when results contain the words of `q`; `close` when nothing did and these are similar names instead.",
+            "nullable": true
+          },
+          "didYouMean": {
+            "type": "string",
+            "description": "A corrected `q` that has results, offered when the one sent found few or no word matches.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PublicSearchResult": {
+        "type": "object",
+        "properties": {
+          "nsn": {
+            "type": "string",
+            "description": "13 digits: FSC then NIIN.",
+            "nullable": true
+          },
+          "niin": {
+            "type": "string",
+            "description": "9 digits, zero-padded.",
+            "nullable": true
+          },
+          "fsc": {
+            "type": "string",
+            "nullable": true
+          },
+          "itemName": {
+            "type": "string",
+            "nullable": true
+          },
+          "partNumber": {
+            "type": "string",
+            "description": "One of the item's part numbers; GET /api/v1/nsn/{niin} lists them all.",
+            "nullable": true
+          },
+          "cageCode": {
+            "type": "string",
+            "description": "The CAGE code of that part number.",
+            "nullable": true
+          },
+          "companyName": {
+            "type": "string",
+            "nullable": true
+          },
+          "latestUnitPrice": {
+            "type": "number",
+            "description": "Unit price on the newest record in DLA's price-reasonableness file for this item, if any.",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Solicitation": {
+        "required": [
+          "solicitationLineNumber",
+          "solicitationNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "solicitationNumber": {
+            "maxLength": 13,
+            "minLength": 1,
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "itemName": {
+            "maxLength": 255,
+            "type": "string",
+            "nullable": true
+          },
+          "niin": {
+            "maxLength": 9,
+            "type": "string",
+            "nullable": true
+          },
+          "solicitationTypeIndicator": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "smallBusinessSetAsideIndicator": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "additionalClauseFillInsIndicator": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "returnByDate": {
+            "maxLength": 10,
+            "type": "string",
+            "nullable": true
+          },
+          "returnBy": {
+            "$ref": "#/components/schemas/DateOnly"
+          },
+          "quoterCageCode": {
+            "maxLength": 5,
+            "type": "string",
+            "nullable": true
+          },
+          "quoteForCageCode": {
+            "maxLength": 5,
+            "type": "string",
+            "nullable": true
+          },
+          "reserved1": {
+            "maxLength": 40,
+            "type": "string",
+            "nullable": true
+          },
+          "reserved2": {
+            "maxLength": 40,
+            "type": "string",
+            "nullable": true
+          },
+          "reserved3": {
+            "maxLength": 40,
+            "type": "string",
+            "nullable": true
+          },
+          "reserved4": {
+            "maxLength": 40,
+            "type": "string",
+            "nullable": true
+          },
+          "reserved5": {
+            "maxLength": 40,
+            "type": "string",
+            "nullable": true
+          },
+          "smallBusinessRepresentationsCode": {
+            "maxLength": 60,
+            "type": "string",
+            "nullable": true
+          },
+          "smallDisadvantagedBusinessEthnicTypeCode": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "womanOwnedSmallBusinessEdwosb": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "veteranOwnedSmallBusiness": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "hubzoneSmallBusiness": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "jointVenture": {
+            "maxLength": 2,
+            "type": "string",
+            "nullable": true
+          },
+          "jointVentureRemarks": {
+            "maxLength": 255,
+            "type": "string",
+            "nullable": true
+          },
+          "reserved6": {
+            "maxLength": 40,
+            "type": "string",
+            "nullable": true
+          },
+          "affirmativeActionComplianceCode": {
+            "maxLength": 2,
+            "type": "string",
+            "nullable": true
+          },
+          "previousContractsComplianceReportsCode": {
+            "maxLength": 2,
+            "type": "string",
+            "nullable": true
+          },
+          "alternateDisputesResolution": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "bidTypeCode": {
+            "maxLength": 2,
+            "type": "string",
+            "nullable": true
+          },
+          "promptPaymentDiscountTermsCode": {
+            "maxLength": 2,
+            "type": "string",
+            "nullable": true
+          },
+          "vendorQuoteNumber": {
+            "maxLength": 15,
+            "type": "string",
+            "nullable": true
+          },
+          "daysQuoteValid": {
+            "maxLength": 3,
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "meetsPackagingRequirement": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "boaFssBpa": {
+            "maxLength": 3,
+            "type": "string",
+            "nullable": true
+          },
+          "boaFssBpaContractNumber": {
+            "maxLength": 17,
+            "type": "string",
+            "nullable": true
+          },
+          "boaFssBpaContractExpirationDate": {
+            "maxLength": 10,
+            "type": "string",
+            "nullable": true
+          },
+          "fobPoint": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "fobCity": {
+            "maxLength": 30,
+            "type": "string",
+            "nullable": true
+          },
+          "fobStateProvince": {
+            "maxLength": 2,
+            "type": "string",
+            "nullable": true
+          },
+          "fobCountry": {
+            "maxLength": 2,
+            "type": "string",
+            "nullable": true
+          },
+          "inspectionPointCode": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "placeGovernmentInspectionPackagingCageCode": {
+            "maxLength": 5,
+            "type": "string",
+            "nullable": true
+          },
+          "placeGovernmentInspectionSuppliesCageCode": {
+            "maxLength": 5,
+            "type": "string",
+            "nullable": true
+          },
+          "substitutionsForSpiProcessProposed": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "spiProcess": {
+            "maxLength": 60,
+            "type": "string",
+            "nullable": true
+          },
+          "spiFacility": {
+            "maxLength": 60,
+            "type": "string",
+            "nullable": true
+          },
+          "spiMilitaryFederalSpecificationStandard": {
+            "maxLength": 60,
+            "type": "string",
+            "nullable": true
+          },
+          "spiAffectedContractLineItemNumber": {
+            "maxLength": 60,
+            "type": "string",
+            "nullable": true
+          },
+          "solicitationLineNumber": {
+            "maxLength": 4,
+            "minLength": 1,
+            "type": "string"
+          },
+          "reserved7": {
+            "maxLength": 40,
+            "type": "string",
+            "nullable": true
+          },
+          "purchaseRequestNumber": {
+            "maxLength": 10,
+            "type": "string",
+            "nullable": true
+          },
+          "nationalStockPartNumber": {
+            "maxLength": 45,
+            "type": "string",
+            "nullable": true
+          },
+          "unitOfIssue": {
+            "maxLength": 2,
+            "type": "string",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "unitPrice": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "deliveryDays": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "guaranteedMinimum": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "doMinimum": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "contractMaximum": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "annualFrequencyOfBuys": {
+            "maxLength": 4,
+            "type": "string",
+            "nullable": true
+          },
+          "noDoMinimumQuantity": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "hubzonePreferenceIndicator": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "waiverOfHubzonePreference": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "immediateShipmentPrice": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "immediateShipmentDeliveryDays": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "reserved8": {
+            "maxLength": 40,
+            "type": "string",
+            "nullable": true
+          },
+          "tradeAgreementsIndicator": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "sourceOfSupplyCageCode": {
+            "maxLength": 5,
+            "type": "string",
+            "nullable": true
+          },
+          "firstArticleWaiverCode": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "hazardousMaterialIdentificationSafetyData": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "hazardousWarningLabels": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "materialRequirements": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "buyAmericanIndicator": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "freeTradeAgreementsIndicator": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "buyAmericanFreeTradeEndProduct": {
+            "maxLength": 2,
+            "type": "string",
+            "nullable": true
+          },
+          "buyAmericanFreeTradeCountryOriginCode": {
+            "maxLength": 2,
+            "type": "string",
+            "nullable": true
+          },
+          "buyAmericanFreeTradeCountryCode": {
+            "maxLength": 2,
+            "type": "string",
+            "nullable": true
+          },
+          "dutyFreeEntryRequested": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "dutyFreeEntryRequestedForeignSuppliesCode": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "dutyFreeEntryRequestedDutyPaidCode": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "dutyFreeEntryRequestedDutyPaidAmount": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "priceBreaksSolicitedIndicator": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "quantityPriceBreaksRange1LowerQuantity": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "quantityPriceBreaksRange1UpperQuantity": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "quantityPriceBreaksRange1UnitPrice": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "quantityPriceBreaksRange2LowerQuantity": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "quantityPriceBreaksRange2UpperQuantity": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "quantityPriceBreaksRange2UnitPrice": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "quantityPriceBreaksRange3LowerQuantity": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "quantityPriceBreaksRange3UpperQuantity": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "quantityPriceBreaksRange3UnitPrice": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "quantityPriceBreaksRange4LowerQuantity": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "quantityPriceBreaksRange4UpperQuantity": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "quantityPriceBreaksRange4UnitPrice": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "quantityPriceBreaksRange5LowerQuantity": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "quantityPriceBreaksRange5UpperQuantity": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "quantityPriceBreaksRange5UnitPrice": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "quantityPriceBreaksRange6LowerQuantity": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "quantityPriceBreaksRange6UpperQuantity": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "quantityPriceBreaksRange6UnitPrice": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "quantityVariancePlus": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "quantityVarianceMinus": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "minimumOrderQuantityCode": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "minimumOrderMaximumQuantity": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "immediateShipmentAvailable": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "immediateShipmentQuantity": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "manufacturerDealer": {
+            "maxLength": 2,
+            "type": "string",
+            "nullable": true
+          },
+          "actualManufacturingProductionCageCode": {
+            "maxLength": 6,
+            "type": "string",
+            "nullable": true
+          },
+          "actualManufacturingProductionNameAddress": {
+            "maxLength": 255,
+            "type": "string",
+            "nullable": true
+          },
+          "itemDescriptionIndicator": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "partNumberOfferedCode": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "partNumberOfferedCageCode": {
+            "maxLength": 5,
+            "type": "string",
+            "nullable": true
+          },
+          "partNumberOfferedPartNumber": {
+            "maxLength": 40,
+            "type": "string",
+            "nullable": true
+          },
+          "partNumberOfferedRemarks": {
+            "maxLength": 255,
+            "type": "string",
+            "nullable": true
+          },
+          "suppliesOffered": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "suppliesOfferedRemarks": {
+            "maxLength": 255,
+            "type": "string",
+            "nullable": true
+          },
+          "qualificationRequirementsMfgCage": {
+            "maxLength": 5,
+            "type": "string",
+            "nullable": true
+          },
+          "qualificationRequirementsSourceCage": {
+            "maxLength": 5,
+            "type": "string",
+            "nullable": true
+          },
+          "qualificationRequirementsItemName": {
+            "maxLength": 50,
+            "type": "string",
+            "nullable": true
+          },
+          "qualificationRequirementsServiceIdentification": {
+            "maxLength": 50,
+            "type": "string",
+            "nullable": true
+          },
+          "qualificationRequirementsTestNumber": {
+            "maxLength": 50,
+            "type": "string",
+            "nullable": true
+          },
+          "higherLevelQualityIndicator": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "higherLevelQualityCode": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "higherLevelQualityRemarks": {
+            "maxLength": 255,
+            "type": "string",
+            "nullable": true
+          },
+          "childLaborCertificationCode": {
+            "maxLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "quoteRemarks": {
+            "maxLength": 255,
+            "type": "string",
+            "nullable": true
+          },
+          "isOutdated": {
+            "type": "boolean"
+          },
+          "noBid": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SolicitationPagedResult": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Solicitation"
+            },
+            "nullable": true
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SpecialHandlingItemEntity": {
+        "required": [
+          "niin"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "niin": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "securityClassification": {
+            "type": "string",
+            "nullable": true
+          },
+          "fsc": {
+            "type": "string",
+            "nullable": true
+          },
+          "nsn": {
+            "type": "string",
+            "nullable": true
+          },
+          "specialHandlingCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "handlingDescription": {
+            "type": "string",
+            "nullable": true
+          },
+          "shelfLifeCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "slcActionCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "ciic": {
+            "type": "string",
+            "nullable": true
+          },
+          "demilCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "hazmatIndicatorCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "cogSym": {
+            "type": "string",
+            "nullable": true
+          },
+          "smic": {
+            "type": "string",
+            "nullable": true
+          },
+          "mcc": {
+            "type": "string",
+            "nullable": true
+          },
+          "smcc": {
+            "type": "string",
+            "nullable": true
+          },
+          "slac": {
+            "type": "string",
+            "nullable": true
+          },
+          "shelfLifeType": {
+            "type": "string",
+            "nullable": true
+          },
+          "documentNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "ingestedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "StockAndDemandData": {
+        "type": "object",
+        "properties": {
+          "onHandQty": {
+            "type": "number",
+            "format": "float"
+          },
+          "backorderQty": {
+            "type": "number",
+            "format": "float"
+          },
+          "dueInQty": {
+            "type": "number",
+            "format": "float"
+          },
+          "reorderPointQty": {
+            "type": "number",
+            "format": "float"
+          },
+          "requisitioningObjective": {
+            "type": "number",
+            "format": "float"
+          },
+          "proximityToReorder": {
+            "type": "number",
+            "format": "double"
+          },
+          "stockHealthStatus": {
+            "type": "string",
+            "nullable": true
+          },
+          "unitOfIssue": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastUpdated": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "onHandHistory": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockSnapshot"
+            },
+            "nullable": true
+          },
+          "forecastData": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ForecastPoint"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "StockSnapshot": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "nullable": true
+          },
+          "onHandQty": {
+            "type": "number",
+            "format": "float"
+          },
+          "reorderPoint": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          },
+          "backorderQty": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "VCharacteristicsEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "niin": {
+            "maxLength": 9,
+            "type": "string",
+            "nullable": true
+          },
+          "mrc": {
+            "type": "string",
+            "nullable": true
+          },
+          "requirementsStatement": {
+            "type": "string",
+            "nullable": true
+          },
+          "clearTextReply": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "VDssCubeAndWeight": {
+        "type": "object",
+        "properties": {
+          "niin": {
+            "type": "string",
+            "nullable": true
+          },
+          "dssWeight": {
+            "type": "number",
+            "format": "float"
+          },
+          "dssCube": {
+            "type": "number",
+            "format": "float"
+          }
+        },
+        "additionalProperties": false
+      },
+      "VFlisManagement": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "niin": {
+            "type": "string",
+            "nullable": true
+          },
+          "effectiveDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "moe": {
+            "type": "string",
+            "nullable": true
+          },
+          "aac": {
+            "type": "string"
+          },
+          "sos": {
+            "type": "string",
+            "nullable": true
+          },
+          "sosm": {
+            "type": "string",
+            "nullable": true
+          },
+          "ui": {
+            "type": "string",
+            "nullable": true
+          },
+          "uiConvFac": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          },
+          "unitPrice": {
+            "type": "number",
+            "format": "float"
+          },
+          "qup": {
+            "type": "string",
+            "nullable": true
+          },
+          "ciic": {
+            "type": "string",
+            "nullable": true
+          },
+          "slc": {
+            "type": "string",
+            "nullable": true
+          },
+          "repRecCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "mgmtCtl": {
+            "type": "string",
+            "nullable": true
+          },
+          "repNetPr": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "usc": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "VFreight": {
+        "type": "object",
+        "properties": {
+          "niin": {
+            "type": "string",
+            "nullable": true
+          },
+          "actyCd": {
+            "type": "string",
+            "nullable": true
+          },
+          "nmfc": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "nmfcSub": {
+            "type": "string",
+            "nullable": true
+          },
+          "ufc": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "hmc": {
+            "type": "string",
+            "nullable": true
+          },
+          "ltl": {
+            "type": "string",
+            "nullable": true
+          },
+          "lcl": {
+            "type": "string",
+            "nullable": true
+          },
+          "rvc": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "wcc": {
+            "type": "string",
+            "nullable": true
+          },
+          "tcc": {
+            "type": "string",
+            "nullable": true
+          },
+          "shc": {
+            "type": "string",
+            "nullable": true
+          },
+          "adc": {
+            "type": "string",
+            "nullable": true
+          },
+          "acc": {
+            "type": "string",
+            "nullable": true
+          },
+          "integ": {
+            "type": "string",
+            "nullable": true
+          },
+          "nmfDesc": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "WeaponSystemDesignatorEntity": {
+        "required": [
+          "niin"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "niin": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "securityClassification": {
+            "type": "string",
+            "nullable": true
+          },
+          "fsc": {
+            "type": "string",
+            "nullable": true
+          },
+          "nsn": {
+            "type": "string",
+            "nullable": true
+          },
+          "wsdc": {
+            "type": "string",
+            "nullable": true
+          },
+          "weaponSystemName": {
+            "type": "string",
+            "nullable": true
+          },
+          "serviceDesignator": {
+            "type": "string",
+            "nullable": true
+          },
+          "essentialityCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "quantityPerEndItem": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          },
+          "wsec": {
+            "type": "string",
+            "nullable": true
+          },
+          "wsgc": {
+            "type": "string",
+            "nullable": true
+          },
+          "wsic": {
+            "type": "string",
+            "nullable": true
+          },
+          "itemName": {
+            "type": "string",
+            "nullable": true
+          },
+          "ingestedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "ApiKey": {
+        "type": "apiKey",
+        "description": "Your API key, e.g. sk_live_…",
+        "name": "X-Api-Key",
+        "in": "header"
+      }
+    }
+  },
+  "security": [
+    {
+      "ApiKey": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Search",
+      "description": "Find NSNs by name, number, part number, FSC or manufacturer."
+    },
+    {
+      "name": "NSNs",
+      "description": "One item's full record and its DLA award history."
+    },
+    {
+      "name": "Solicitations",
+      "description": "Open DIBBS RFQs and solicitations DLA got no bids on."
+    },
+    {
+      "name": "Companies",
+      "description": "CAGE code lookups."
+    }
+  ]
+}
