@@ -39,6 +39,69 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Company"
+                },
+                "example": {
+                  "cageCode": "1CAY9",
+                  "cageStatus": "A",
+                  "type": "F",
+                  "cao": "S1002A",
+                  "companyName": "ATLANTIC DIVING SUPPLY, INC.",
+                  "city": "VIRGINIA BEACH",
+                  "stateProvince": "VA",
+                  "zipPostalZone": "23452-7383",
+                  "country": "UNITED STATES",
+                  "contractHistory": [
+                    {
+                      "id": 61389324,
+                      "niin": "017178408",
+                      "securityClassification": "U",
+                      "fsc": "2815",
+                      "unit": "EA",
+                      "cage": "1CAY9",
+                      "contractNumber": "SPE7LX26FB8TJ",
+                      "orderQty": 1,
+                      "awardDate": "20260915",
+                      "netPrice": 63.83,
+                      "totalPrice": 63.83,
+                      "poNum": 4573051081,
+                      "poItmNo": 1,
+                      "itemName": "DAMPENER,VIBRATION,ENGINE",
+                      "partNumber": "142-7170",
+                      "partNumbers": [
+                        "142-7170"
+                      ],
+                      "stdUPrice": 59.87,
+                      "nsn": "2815017178408",
+                      "deliveryOrderNumber": null,
+                      "awardPdfLink": null,
+                      "deliveryOrderPdfLink": null
+                    },
+                    {
+                      "id": 61361980,
+                      "niin": "016897118",
+                      "securityClassification": "U",
+                      "fsc": "6685",
+                      "unit": "EA",
+                      "cage": "1CAY9",
+                      "contractNumber": "SPE7LX26FB8PX",
+                      "orderQty": 5,
+                      "awardDate": "20260915",
+                      "netPrice": 451.09,
+                      "totalPrice": 2255.45,
+                      "poNum": 4573046099,
+                      "poItmNo": 1,
+                      "itemName": "SENSOR,AMBIENT TEMPERATURE",
+                      "partNumber": "383-2993",
+                      "partNumbers": [
+                        "383-2993"
+                      ],
+                      "stdUPrice": 349.25,
+                      "nsn": "6685016897118",
+                      "deliveryOrderNumber": null,
+                      "awardPdfLink": null,
+                      "deliveryOrderPdfLink": null
+                    }
+                  ]
                 }
               }
             }
@@ -150,6 +213,53 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DlaNoBidSolicitationPagedResult"
+                },
+                "example": {
+                  "items": [
+                    {
+                      "id": 971013,
+                      "supplyChain": "Aviation",
+                      "dlaDirectOrCustomerDirect": "CD",
+                      "pr": "7000591529",
+                      "prDate": "2022-11-16T00:00:00Z",
+                      "fsc": "5975",
+                      "niin": "000663581",
+                      "nsn": "5975000663581",
+                      "nomenclature": "RACK,ELECTRICAL EQUI",
+                      "solicitationNumber": "SPE4A623T020V",
+                      "solicitationClose": "2022-11-28T00:00:00Z",
+                      "prQuantity": 9,
+                      "unitOfIssue": "EA",
+                      "amc": "3",
+                      "amsc": "P",
+                      "naics": "334511",
+                      "sourceFileDate": "2026-09-17T00:00:00Z",
+                      "ingestedAt": "2026-09-18T06:53:05.333803Z"
+                    },
+                    {
+                      "id": 971016,
+                      "supplyChain": "Aviation",
+                      "dlaDirectOrCustomerDirect": "DD",
+                      "pr": "7001931135",
+                      "prDate": "2023-03-07T00:00:00Z",
+                      "fsc": "6615",
+                      "niin": "001965732",
+                      "nsn": "6615001965732",
+                      "nomenclature": "TUBE ASSEMBLY,SERVO",
+                      "solicitationNumber": "SPE4A523Q0370",
+                      "solicitationClose": "2023-03-10T00:00:00Z",
+                      "prQuantity": 2,
+                      "unitOfIssue": "EA",
+                      "amc": "3",
+                      "amsc": "B",
+                      "naics": "334511",
+                      "sourceFileDate": "2026-09-17T00:00:00Z",
+                      "ingestedAt": "2026-09-18T06:53:05.333803Z"
+                    }
+                  ],
+                  "totalCount": 23995,
+                  "page": 1,
+                  "pageSize": 2
                 }
               }
             }
@@ -187,6 +297,134 @@
                   "items": {
                     "$ref": "#/components/schemas/NsnDetail"
                   }
+                },
+                "example": {
+                  "fsc": "5330",
+                  "niin": "008678836",
+                  "inc": 77777,
+                  "itemName": "O RING",
+                  "sos": "",
+                  "endItemName": "",
+                  "cancelledNiins": [
+                    ""
+                  ],
+                  "fiig": null,
+                  "pinc": 1382299,
+                  "critCd": null,
+                  "ii": "2",
+                  "rpdMrc": 9,
+                  "dmil": "A",
+                  "dmilIntCd": "1.0",
+                  "niinAsgmt": "01-JAN-1960",
+                  "pmic": "U",
+                  "adp": null,
+                  "esdEmi": null,
+                  "hmic": "P",
+                  "hcc": null,
+                  "scheduleB": 8487900040,
+                  "enac": null,
+                  "iuidIndicator": null,
+                  "lstKwnSos": "S9I",
+                  "natoFmsn": 7,
+                  "fedmall": null,
+                  "crossReferences": [
+                    {
+                      "id": 5002230,
+                      "niin": "008678836",
+                      "partNumber": "51097",
+                      "cageCode": "99166",
+                      "companyName": "SUNDSTRAND CORP SUNDSTRAND HYDRAULICS DIV",
+                      "cageStatus": "H",
+                      "rncc": "3",
+                      "rnvc": 9,
+                      "dac": "X",
+                      "rnaac": "XX",
+                      "rnfc": 3,
+                      "rnsc": "D",
+                      "rnjc": null,
+                      "sadc": null,
+                      "hcc": null,
+                      "msds": null,
+                      "medals": null,
+                      "company": {
+                        "cageCode": "99166",
+                        "cageStatus": "H",
+                        "type": "A",
+                        "cao": "S1403A",
+                        "companyName": "SUNDSTRAND CORP SUNDSTRAND HYDRAULICS DIV",
+                        "city": "ROCKFORD",
+                        "stateProvince": "IL",
+                        "zipPostalZone": "61100",
+                        "country": "UNITED STATES",
+                        "contractHistory": null
+                      }
+                    }
+                  ],
+                  "managementData": [],
+                  "contractHistory": [],
+                  "procurementHistory": [],
+                  "freight": {
+                    "niin": "008678836",
+                    "actyCd": "XX",
+                    "nmfc": null,
+                    "nmfcSub": null,
+                    "ufc": null,
+                    "hmc": null,
+                    "ltl": null,
+                    "lcl": null,
+                    "rvc": null,
+                    "wcc": null,
+                    "tcc": null,
+                    "shc": null,
+                    "adc": null,
+                    "acc": null,
+                    "integ": null,
+                    "nmfDesc": null
+                  },
+                  "dssCubeAndWeight": {
+                    "niin": null,
+                    "dssWeight": 0,
+                    "dssCube": 0
+                  },
+                  "flisPackaging": [],
+                  "dibbsSolicitations": [],
+                  "dibbsAwards": [],
+                  "dibbsBatchQuotes": [],
+                  "dibbsForecasts": [],
+                  "vCharacteristics": [],
+                  "dlaNoBidSolicitations": [],
+                  "stockAndDemand": {
+                    "onHandQty": 0,
+                    "backorderQty": 0,
+                    "dueInQty": 0,
+                    "reorderPointQty": 0,
+                    "requisitioningObjective": 0,
+                    "proximityToReorder": 0,
+                    "stockHealthStatus": "critical",
+                    "unitOfIssue": null,
+                    "lastUpdated": null,
+                    "onHandHistory": [],
+                    "forecastData": []
+                  },
+                  "priceReasonableness": [],
+                  "approvedVendors": [
+                    {
+                      "cage": "99166",
+                      "vendorName": "SUNDSTRAND CORP SUNDSTRAND HYDRAULICS DIV",
+                      "vendorStatus": "H",
+                      "acquisitionMethod": null,
+                      "unitPrice": null,
+                      "city": "ROCKFORD",
+                      "state": "IL"
+                    }
+                  ],
+                  "weaponSystems": [],
+                  "specialHandlingItems": [],
+                  "leadTime": null,
+                  "competitionLevel": "no_awards",
+                  "activeCompetitorCount": 0,
+                  "approvedSourceCount": 1,
+                  "contractHistoryTotalCount": 0
                 }
               }
             }
