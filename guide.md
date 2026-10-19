@@ -56,11 +56,11 @@ Key, subscription and limit errors (`401`, `403`, `429`, `503`) and the API's ow
 
 List endpoints take `page` (from 1) and `pageSize`, and return one page with `totalCount`, `page` and `pageSize`. The rows are in `items`, except search, which calls them `results`. A page past the end comes back empty, so you can page until a response has no rows.
 
-An NSN's record (`GET /api/v1/nsn/{niin}`) doesn't include its awards or solicitations: page through awards with `GET /api/v1/nsn/{niin}/awards`, and find solicitations with `GET /api/v1/solicitations?nsn=...`.
+An NSN's record (`GET /api/v1/nsn/{niin}`) doesn't include its awards or solicitations: page through awards with `GET /api/v1/nsn/{niin}/awards`, and find solicitations with `GET /api/v1/solicitations?nsn=` and its 13-digit NSN.
 
 ## Identifiers
 
-- **NIIN**: 9 digits, e.g. `012345678`. **NSN**: 13 digits, the 4-digit FSC followed by the NIIN, e.g. `5330-01-234-5678`. Endpoints take either, with or without dashes, and return them without dashes.
+- **NIIN**: 9 digits, e.g. `012345678`. **NSN**: 13 digits, the 4-digit FSC followed by the NIIN, e.g. `5330-01-234-5678`. Endpoints take either, with or without dashes, and return them without dashes. The one exception is the `nsn` filter on `GET /api/v1/solicitations`, which needs the full 13-digit NSN.
 - **CAGE code**: 5 characters, e.g. `1CAY9`.
 
 ## How fresh the data is
