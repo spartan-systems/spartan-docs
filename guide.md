@@ -11,7 +11,7 @@ curl -H "X-Api-Key: sk_live_..." \
   "{{API_URL}}/api/v1/search?q=o%20ring&pageSize=5"
 ```
 
-Every endpoint is a `GET` and returns JSON with camelCase field names.
+Every endpoint is a `GET` and returns JSON with camelCase field names. Dates are ISO 8601 (`2026-05-14`), and fields DLA leaves blank are `null`.
 
 ## Authentication
 
@@ -41,7 +41,7 @@ Over either limit you get `429 Too Many Requests`. A per-minute `429` also has a
 
 ## Errors
 
-Key, subscription and limit errors (`401`, `403`, `429`, `503`) return `{"message": "..."}`, with a `code` on some. Other `400`s and `404`s return a standard [problem details](https://www.rfc-editor.org/rfc/rfc9457) body (`title`, `status`, and for invalid parameters `errors`, keyed by parameter), except the search's own `400`, which is a `message`. Branch on the status code, not the body.
+Key, subscription and limit errors (`401`, `403`, `429`, `503`) and the API's own parameter checks (`400`, e.g. an unknown set-aside code) return `{"message": "..."}`, with a `code` on some. A parameter of the wrong type (`page=abc`) and a `404` return a standard [problem details](https://www.rfc-editor.org/rfc/rfc9457) body (`title`, `status`, and for invalid parameters `errors`, keyed by parameter). Branch on the status code, not the body.
 
 | Status | Meaning |
 |---|---|
@@ -56,11 +56,11 @@ Key, subscription and limit errors (`401`, `403`, `429`, `503`) return `{"messag
 
 List endpoints take `page` (from 1) and `pageSize`, and return one page with `totalCount`, `page` and `pageSize`. The rows are in `items`, except search, which calls them `results`. A page past the end comes back empty, so you can page until a response has no rows.
 
-An NSN's full record (`GET /api/v1/nsn/{niin}`) embeds only its newest 1,000 awards in `contractHistory`, and `contractHistoryTotalCount` counts them all. Page through the rest with `GET /api/v1/nsn/{niin}/awards`.
+An NSN's record (`GET /api/v1/nsn/{niin}`) doesn't include its awards or solicitations: page through awards with `GET /api/v1/nsn/{niin}/awards`, and find solicitations with `GET /api/v1/solicitations?nsn=` and its 13-digit NSN.
 
 ## Identifiers
 
-- **NIIN**: 9 digits, e.g. `012345678`. **NSN**: 13 digits, the 4-digit FSC followed by the NIIN, e.g. `5330-01-234-5678`. Endpoints take either, with or without dashes, and return them without dashes.
+- **NIIN**: 9 digits, e.g. `012345678`. **NSN**: 13 digits, the 4-digit FSC followed by the NIIN, e.g. `5330-01-234-5678`. Endpoints take either, with or without dashes, and return them without dashes. The one exception is the `nsn` filter on `GET /api/v1/solicitations`, which needs the full 13-digit NSN.
 - **CAGE code**: 5 characters, e.g. `1CAY9`.
 
 ## How fresh the data is
@@ -76,4 +76,4 @@ An NSN's full record (`GET /api/v1/nsn/{niin}`) embeds only its newest 1,000 awa
 
 Everything here is under `/api/v1`. Within v1 we only add things: new endpoints, new optional parameters and new response fields. Write your client to ignore fields it doesn't know. Removing or renaming a field, or changing what one means, would come as `/api/v2`, with v1 kept running while you move over.
 
-One exception, on 2026-10-19 before any customer had used it: `GET /api/v1/nsn/{niin}/awards` changed from a bare array to the paged object above.
+One exception, on 2026-10-19 before any customer had used v1: every endpoint moved to the response shapes documented here (awards became paged; the NSN record, solicitations, no-bid solicitations and companies got their own trimmed models with ISO dates).

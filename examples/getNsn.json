@@ -1,128 +1,126 @@
 {
-  "fsc": "5330",
-  "niin": "008678836",
-  "inc": 77777,
-  "itemName": "O RING",
-  "sos": "",
-  "endItemName": "",
-  "cancelledNiins": [
-    ""
-  ],
-  "fiig": null,
-  "pinc": 1382299,
-  "critCd": null,
-  "ii": "2",
-  "rpdMrc": 9,
-  "dmil": "A",
-  "dmilIntCd": "1.0",
-  "niinAsgmt": "01-JAN-1960",
-  "pmic": "U",
-  "adp": null,
-  "esdEmi": null,
-  "hmic": "P",
-  "hcc": null,
-  "scheduleB": 8487900040,
-  "enac": null,
-  "iuidIndicator": null,
-  "lstKwnSos": "S9I",
-  "natoFmsn": 7,
-  "fedmall": null,
-  "crossReferences": [
+  "nsn": "4730000146763",
+  "niin": "000146763",
+  "fsc": "4730",
+  "itemName": "TEE,PIPE",
+  "inc": 3805,
+  "endItemName": "HIGH-MOBILITY ARTILLERY ROCKET SYSTEM (HIMARS)",
+  "inFlis": true,
+  "cancelledNiins": [],
+  "codes": {
+    "sourceOfSupply": "SMS",
+    "criticalityCode": "X",
+    "demilCode": "A",
+    "demilIntegrityCode": "1.0",
+    "pmic": "U",
+    "hmic": "N",
+    "esdCode": null,
+    "iuidIndicator": null,
+    "fiig": "A080B0",
+    "scheduleB": "7412200000",
+    "niinAssignedDate": "1968-05-08"
+  },
+  "partNumbers": [
     {
-      "id": 5002230,
-      "niin": "008678836",
-      "partNumber": "51097",
-      "cageCode": "99166",
-      "companyName": "SUNDSTRAND CORP SUNDSTRAND HYDRAULICS DIV",
-      "cageStatus": "H",
-      "rncc": "3",
-      "rnvc": 9,
-      "dac": "X",
-      "rnaac": "XX",
-      "rnfc": 3,
-      "rnsc": "D",
-      "rnjc": null,
-      "sadc": null,
-      "hcc": null,
-      "msds": null,
-      "medals": null,
-      "company": {
-        "cageCode": "99166",
-        "cageStatus": "H",
-        "type": "A",
-        "cao": "S1403A",
-        "companyName": "SUNDSTRAND CORP SUNDSTRAND HYDRAULICS DIV",
-        "city": "ROCKFORD",
-        "stateProvince": "IL",
-        "zipPostalZone": "61100",
-        "country": "UNITED STATES",
-        "contractHistory": null
-      }
+      "partNumber": "12601004",
+      "cageCode": "19207",
+      "companyName": "U S ARMY TANK AUTOMOTIVE COMMAND AMSTA-IM-MM",
+      "cageStatus": "A",
+      "rncc": "7",
+      "rnvc": 2,
+      "dac": "C"
+    },
+    {
+      "partNumber": "70921104",
+      "cageCode": "6N299",
+      "companyName": "AGCO CORP PARTS OPN",
+      "cageStatus": "A",
+      "rncc": "5",
+      "rnvc": 2,
+      "dac": "E"
     }
   ],
-  "managementData": [],
-  "contractHistory": [],
-  "procurementHistory": [],
-  "freight": {
-    "niin": "008678836",
-    "actyCd": "XX",
-    "nmfc": null,
-    "nmfcSub": null,
-    "ufc": null,
-    "hmc": null,
-    "ltl": null,
-    "lcl": null,
-    "rvc": null,
-    "wcc": null,
-    "tcc": null,
-    "shc": null,
-    "adc": null,
-    "acc": null,
-    "integ": null,
-    "nmfDesc": null
-  },
-  "dssCubeAndWeight": {
-    "niin": null,
-    "dssWeight": 0,
-    "dssCube": 0
-  },
-  "flisPackaging": [],
-  "dibbsSolicitations": [],
-  "dibbsAwards": [],
-  "dibbsBatchQuotes": [],
-  "dibbsForecasts": [],
-  "vCharacteristics": [],
-  "dlaNoBidSolicitations": [],
-  "stockAndDemand": {
-    "onHandQty": 0,
-    "backorderQty": 0,
-    "dueInQty": 0,
-    "reorderPointQty": 0,
-    "requisitioningObjective": 0,
-    "proximityToReorder": 0,
-    "stockHealthStatus": "critical",
-    "unitOfIssue": null,
-    "lastUpdated": null,
-    "onHandHistory": [],
-    "forecastData": []
-  },
-  "priceReasonableness": [],
-  "approvedVendors": [
+  "approvedSources": [
     {
-      "cage": "99166",
-      "vendorName": "SUNDSTRAND CORP SUNDSTRAND HYDRAULICS DIV",
-      "vendorStatus": "H",
+      "cageCode": "6N299",
+      "name": "AGCO CORP PARTS OPN",
+      "status": "A",
       "acquisitionMethod": null,
       "unitPrice": null,
-      "city": "ROCKFORD",
+      "city": "BATAVIA",
       "state": "IL"
+    },
+    {
+      "cageCode": "93334",
+      "name": "ATWOOD FENCE CO INC",
+      "status": "A",
+      "acquisitionMethod": null,
+      "unitPrice": null,
+      "city": "KOSCIUSKO",
+      "state": "MS"
     }
   ],
-  "weaponSystems": [],
-  "specialHandlingItems": [],
-  "leadTime": null,
-  "competitionLevel": "no_awards",
-  "activeCompetitorCount": 0,
-  "approvedSourceCount": 1,
-  "contractHistoryTotalCount": 0
+  "competition": {
+    "level": "moderate",
+    "awardeeCount": 6,
+    "awardeesLast5Years": 3,
+    "approvedSourceCount": 16
+  },
+  "management": [
+    {
+      "effectiveDate": "2023-10-01",
+      "moe": "DM",
+      "sourceOfSupply": "SMS",
+      "unitOfIssue": "PG",
+      "unitPrice": 132.24,
+      "aac": "Z",
+      "qup": "1",
+      "ciic": "U",
+      "shelfLifeCode": "0",
+      "repairabilityCode": "Z"
+    },
+    {
+      "effectiveDate": "2023-10-01",
+      "moe": "DS",
+      "sourceOfSupply": "SMS",
+      "unitOfIssue": "PG",
+      "unitPrice": 132.24,
+      "aac": "Z",
+      "qup": "1",
+      "ciic": "U",
+      "shelfLifeCode": "0",
+      "repairabilityCode": null
+    }
+  ],
+  "stock": {
+    "onHand": 4710,
+    "backordered": 0,
+    "dueIn": 3510,
+    "reorderPoint": 4961.5,
+    "requisitioningObjective": 0,
+    "status": "adequate",
+    "unitOfIssue": null,
+    "asOf": "2026-08-31"
+  },
+  "leadTime": {
+    "administrativeDays": 60,
+    "productionDays": 82
+  },
+  "specialHandling": [],
+  "weaponSystems": [
+    {
+      "code": "18M",
+      "name": "MINE RESISTANT VEHI (TAMCN: D00257K)  (MRAP)",
+      "service": null,
+      "essentialityCode": null,
+      "quantityPerEndItem": null
+    },
+    {
+      "code": "19M",
+      "name": "COUGAR CAT II SURGE",
+      "service": null,
+      "essentialityCode": null,
+      "quantityPerEndItem": null
+    }
+  ]
 }
