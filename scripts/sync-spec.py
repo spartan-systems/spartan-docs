@@ -22,7 +22,7 @@ if not any(path.startswith("/api/v1/") for path in spec.get("paths", {})):
 
 # The API names whatever host served the spec; the docs always point at the public one.
 spec["servers"] = [{"url": PUBLIC_API, "description": "Production"}]
-spec["info"]["description"] = (ROOT / "guide.md").read_text()
+spec["info"]["description"] = (ROOT / "guide.md").read_text().replace("{{API_URL}}", PUBLIC_API)
 spec["tags"] = [
     {"name": "Search", "description": "Find NSNs by name, number, part number, FSC or manufacturer."},
     {"name": "NSNs", "description": "One item's full record and its DLA award history."},
@@ -41,8 +41,11 @@ for ops in spec["paths"].values():
             if "application/json" in response.get("content", {}):
                 response["content"] = {"application/json": response["content"]["application/json"]}
         example = ROOT / "examples" / f"{op.get('operationId')}.json"
-        if example.exists() and "200" in op.get("responses", {}):
-            op["responses"]["200"]["content"]["application/json"]["example"] = json.loads(example.read_text())
+        if example.exists():
+            media = op.get("responses", {}).get("200", {}).get("content", {}).get("application/json")
+            if media is None:
+                sys.exit(f"{example.name}: {op['operationId']} has no 200 application/json response to attach it to")
+            media["example"] = json.loads(example.read_text())
 
 (ROOT / "openapi.json").write_text(json.dumps(spec, indent=2, ensure_ascii=False) + "\n")
 print(f"openapi.json: {len(spec['paths'])} paths from {source}")

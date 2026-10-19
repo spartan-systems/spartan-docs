@@ -8,7 +8,7 @@ The Spartan API serves the same DLA procurement data as the Spartan app: NSNs an
 
 ```bash
 curl -H "X-Api-Key: sk_live_..." \
-  "https://calf-lenient-officially.ngrok-free.app/api/v1/search?q=o%20ring&pageSize=5"
+  "{{API_URL}}/api/v1/search?q=o%20ring&pageSize=5"
 ```
 
 Every endpoint is a `GET` and returns JSON with camelCase field names.
@@ -28,7 +28,7 @@ A key works only while your company's subscription is active.
 
 Each request costs 1 unit. Every request that passes the key check counts, including ones that return `400` or `404`. Need more? Contact us.
 
-Every response carries your remaining allowance:
+Responses to accepted requests carry your remaining allowance (the `X-Usage-*` headers only when the key has a monthly quota):
 
 | Header | Meaning |
 |---|---|
@@ -41,11 +41,11 @@ Over either limit you get `429 Too Many Requests`. A per-minute `429` also has a
 
 ## Errors
 
-Errors return a JSON body with a `message`.
+Key, subscription and limit errors (`401`, `403`, `429`, `503`) return `{"message": "..."}`, with a `code` on some. Other `400`s and `404`s return a standard [problem details](https://www.rfc-editor.org/rfc/rfc9457) body (`title`, `status`, and for invalid parameters `errors`, keyed by parameter), except the search's own `400`, which is a `message`. Branch on the status code, not the body.
 
 | Status | Meaning |
 |---|---|
-| `400` | A parameter is missing or malformed. Validation errors list each field under `errors`. |
+| `400` | A parameter is missing or malformed. |
 | `401` | The `X-Api-Key` header is missing, or the key is invalid or revoked. |
 | `403` | The key's company has no active subscription (`"code": "subscription_required"`). |
 | `404` | Nothing matches, e.g. an unknown NIIN or CAGE code. |

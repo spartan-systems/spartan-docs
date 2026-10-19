@@ -15,7 +15,7 @@
 </head>
 <body>
   <div id="app"></div>
-  <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.72.3/dist/browser/standalone.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.72.3/dist/browser/standalone.js" integrity="sha384-HWi/QCSPi64AQ0xBXFGDk+7gmvZ4hJ/7sZMIXqWVz6Ikb6+Cxej/hWKaomOStyFb" crossorigin="anonymous"></script>
   <script>
     Scalar.createApiReference('#app', {
       url: './openapi.json',
@@ -33,8 +33,6 @@
         objc: true, ocaml: true, php: true, powershell: true, r: true, ruby: true, swift: true, dart: true, fsharp: true, rust: true,
         node: ['undici', 'ofetch'], js: ['jquery', 'xhr', 'ofetch'], python: ['httpx_sync', 'httpx_async']
       },
-      // The API sits behind ngrok's free tier, which answers browser requests without this header with an HTML warning page.
-      onBeforeRequest: ({ request }) => { request.headers.set('ngrok-skip-browser-warning', '1'); },
       customCss: `
         :root, .light-mode {
           --scalar-font: 'Inter', system-ui, sans-serif;
