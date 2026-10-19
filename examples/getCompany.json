@@ -1,63 +1,11 @@
 {
   "cageCode": "1CAY9",
+  "name": "ATLANTIC DIVING SUPPLY, INC.",
   "cageStatus": "A",
   "type": "F",
   "cao": "S1002A",
-  "companyName": "ATLANTIC DIVING SUPPLY, INC.",
   "city": "VIRGINIA BEACH",
-  "stateProvince": "VA",
-  "zipPostalZone": "23452-7383",
-  "country": "UNITED STATES",
-  "contractHistory": [
-    {
-      "id": 61389324,
-      "niin": "017178408",
-      "securityClassification": "U",
-      "fsc": "2815",
-      "unit": "EA",
-      "cage": "1CAY9",
-      "contractNumber": "SPE7LX26FB8TJ",
-      "orderQty": 1,
-      "awardDate": "20260915",
-      "netPrice": 63.83,
-      "totalPrice": 63.83,
-      "poNum": 4573051081,
-      "poItmNo": 1,
-      "itemName": "DAMPENER,VIBRATION,ENGINE",
-      "partNumber": "142-7170",
-      "partNumbers": [
-        "142-7170"
-      ],
-      "stdUPrice": 59.87,
-      "nsn": "2815017178408",
-      "deliveryOrderNumber": null,
-      "awardPdfLink": null,
-      "deliveryOrderPdfLink": null
-    },
-    {
-      "id": 61361980,
-      "niin": "016897118",
-      "securityClassification": "U",
-      "fsc": "6685",
-      "unit": "EA",
-      "cage": "1CAY9",
-      "contractNumber": "SPE7LX26FB8PX",
-      "orderQty": 5,
-      "awardDate": "20260915",
-      "netPrice": 451.09,
-      "totalPrice": 2255.45,
-      "poNum": 4573046099,
-      "poItmNo": 1,
-      "itemName": "SENSOR,AMBIENT TEMPERATURE",
-      "partNumber": "383-2993",
-      "partNumbers": [
-        "383-2993"
-      ],
-      "stdUPrice": 349.25,
-      "nsn": "6685016897118",
-      "deliveryOrderNumber": null,
-      "awardPdfLink": null,
-      "deliveryOrderPdfLink": null
-    }
-  ]
+  "state": "VA",
+  "postalCode": "23452-7383",
+  "country": "UNITED STATES"
 }
