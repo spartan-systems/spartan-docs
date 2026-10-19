@@ -52,6 +52,12 @@ Key, subscription and limit errors (`401`, `403`, `429`, `503`) return `{"messag
 | `429` | Rate limit or monthly quota spent. See the headers above. |
 | `503` | We couldn't confirm your subscription just then. Retry after a moment. |
 
+## Paging
+
+List endpoints take `page` (from 1) and `pageSize`, and return one page with `totalCount`, `page` and `pageSize`. The rows are in `items`, except search, which calls them `results`. A page past the end comes back empty, so you can page until a response has no rows.
+
+An NSN's full record (`GET /api/v1/nsn/{niin}`) embeds only its newest 1,000 awards in `contractHistory`, and `contractHistoryTotalCount` counts them all. Page through the rest with `GET /api/v1/nsn/{niin}/awards`.
+
 ## Identifiers
 
 - **NIIN**: 9 digits, e.g. `012345678`. **NSN**: 13 digits, the 4-digit FSC followed by the NIIN, e.g. `5330-01-234-5678`. Endpoints take either, with or without dashes, and return them without dashes.
@@ -69,3 +75,5 @@ Key, subscription and limit errors (`401`, `403`, `429`, `503`) return `{"messag
 ## Versioning
 
 Everything here is under `/api/v1`. Within v1 we only add things: new endpoints, new optional parameters and new response fields. Write your client to ignore fields it doesn't know. Removing or renaming a field, or changing what one means, would come as `/api/v2`, with v1 kept running while you move over.
+
+One exception, on 2026-10-19 before any customer had used it: `GET /api/v1/nsn/{niin}/awards` changed from a bare array to the paged object above.
