@@ -13,7 +13,8 @@ PUBLIC_API = "https://api.spartansystems.us"
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 source = sys.argv[1] if len(sys.argv) > 1 else f"{PUBLIC_API}/api/v1/openapi.json"
-request = urllib.request.Request(source)
+# Cloudflare's Browser Integrity Check blocks the default Python-urllib User-Agent (error 1010).
+request = urllib.request.Request(source, headers={"User-Agent": "spartan-docs-sync"})
 with urllib.request.urlopen(request, timeout=60) as response:
     spec = json.load(response)
 
