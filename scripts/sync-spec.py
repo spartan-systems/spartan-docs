@@ -9,11 +9,11 @@ import pathlib
 import sys
 import urllib.request
 
-PUBLIC_API = "https://calf-lenient-officially.ngrok-free.app"
+PUBLIC_API = "https://api.spartansystems.us"
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 source = sys.argv[1] if len(sys.argv) > 1 else f"{PUBLIC_API}/api/v1/openapi.json"
-request = urllib.request.Request(source, headers={"ngrok-skip-browser-warning": "1"})
+request = urllib.request.Request(source)
 with urllib.request.urlopen(request, timeout=60) as response:
     spec = json.load(response)
 
