@@ -562,7 +562,16 @@
           {
             "name": "openOnly",
             "in": "query",
-            "description": "Only lines whose return-by date hasn't passed. Default true.",
+            "description": "Only open lines: those before their return-by date, and those up to a year past it that DIBBS still takes quotes on. Default true.",
+            "style": "form",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "pastDue",
+            "in": "query",
+            "description": "With `openOnly`, include open lines past their return-by date. Default true; `false` lists only lines not yet due, which is faster without other filters.",
             "style": "form",
             "schema": {
               "type": "boolean"
