@@ -1193,7 +1193,7 @@
           },
           "cageStatus": {
             "type": "string",
-            "description": "CAGE status code; `A` is active.",
+            "description": "CAGE status code; `A` is active. Null for a CAGE DLA's CAGE file doesn't list yet, whose company comes from its SAM.gov registration, as do null `type` and `cao`.",
             "nullable": true
           },
           "type": {
