@@ -1193,17 +1193,17 @@
           },
           "cageStatus": {
             "type": "string",
-            "description": "CAGE status code; `A` is active. Null for a CAGE DLA's CAGE file doesn't list yet, whose company comes from its SAM.gov registration, as do null `type` and `cao`.",
+            "description": "CAGE status code; `A` is active. Null when DLA's CAGE file doesn't give one, as for a CAGE it doesn't list yet, whose company comes from its SAM.gov registration.",
             "nullable": true
           },
           "type": {
             "type": "string",
-            "description": "CAGE type code.",
+            "description": "CAGE type code. Null when DLA's CAGE file doesn't give one, as for CAGEs added since November 2023.",
             "nullable": true
           },
           "cao": {
             "type": "string",
-            "description": "Contract Administration Office.",
+            "description": "Contract Administration Office. Null when DLA's CAGE file doesn't give one.",
             "nullable": true
           },
           "city": {
