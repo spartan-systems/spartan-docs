@@ -27,11 +27,12 @@ Limits are per company. All of your company's keys share them.
 |---|---|
 | Requests per minute | 60 |
 | Units per calendar month (UTC) | 10,000 |
-| Active keys | 10 |
 
-Each request costs 1 unit. Every request that passes the key check counts, including ones that return `400` or `404`. Revoked keys don't count toward the 10. Need more? Contact us.
+Each request costs 1 unit. Every request the API answers counts, including ones that return `400` or `404`. Refused requests (`401`, `403`, `429`, `503`) don't. Units a key used still count after you revoke it. Need higher limits? Contact us.
 
-Responses to accepted requests carry your company's remaining allowance (the `X-Usage-*` headers only when it has a monthly quota):
+A company can have 10 active keys. Revoked keys don't count toward them.
+
+Responses to accepted requests carry your company's remaining allowance (the `X-RateLimit-*` headers only when it has a per-minute limit, the `X-Usage-*` headers only when it has a monthly quota):
 
 | Header | Meaning |
 |---|---|
