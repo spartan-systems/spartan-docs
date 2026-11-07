@@ -21,14 +21,17 @@ A key works only while your company's subscription is active.
 
 ## Rate limits and quota
 
+Limits are per company. All of your company's keys share them.
+
 | Limit | Default |
 |---|---|
-| Requests per minute, per key | 60 |
-| Units per calendar month (UTC), per key | 10,000 |
+| Requests per minute | 60 |
+| Units per calendar month (UTC) | 10,000 |
+| Active keys | 10 |
 
-Each request costs 1 unit. Every request that passes the key check counts, including ones that return `400` or `404`. Need more? Contact us.
+Each request costs 1 unit. Every request that passes the key check counts, including ones that return `400` or `404`. Revoked keys don't count toward the 10. Need more? Contact us.
 
-Responses to accepted requests carry your remaining allowance (the `X-Usage-*` headers only when the key has a monthly quota):
+Responses to accepted requests carry your company's remaining allowance (the `X-Usage-*` headers only when it has a monthly quota):
 
 | Header | Meaning |
 |---|---|
